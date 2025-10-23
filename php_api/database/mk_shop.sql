@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 23, 2025 at 05:10 AM
+-- Generation Time: Oct 23, 2025 at 05:40 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.1.25
 
@@ -43,6 +43,29 @@ INSERT INTO `admin` (`id`, `username`, `password`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `employees`
+--
+
+CREATE TABLE `employees` (
+  `emp_id` int(11) NOT NULL,
+  `firstname` varchar(100) NOT NULL,
+  `lastname` varchar(100) NOT NULL,
+  `telephone` varchar(20) DEFAULT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `employees`
+--
+
+INSERT INTO `employees` (`emp_id`, `firstname`, `lastname`, `telephone`, `username`, `password`) VALUES
+(1, 'Somchai', 'Suksan', '0812345678', 'somchai', '123456'),
+(2, 'Nongyao', 'Sornjapo', '0812345678', 'yao', '1234');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `orders`
 --
 
@@ -75,7 +98,8 @@ INSERT INTO `orders` (`id`, `table_no`, `total_price`, `order_date`, `status`) V
 (27, '4', 0.00, '2025-10-22 23:53:24', 'เสร็จแล้ว'),
 (28, '2', 0.00, '2025-10-23 08:52:04', 'เสร็จแล้ว'),
 (29, '1', 0.00, '2025-10-23 09:35:12', 'เสร็จแล้ว'),
-(30, '4', 0.00, '2025-10-23 10:07:16', 'เสร็จแล้ว');
+(30, '4', 0.00, '2025-10-23 10:07:16', 'เสร็จแล้ว'),
+(31, '2', 1098.00, '2025-10-23 10:22:46', 'รอดำเนินการ');
 
 -- --------------------------------------------------------
 
@@ -135,7 +159,9 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `quantity`, `price`, 
 (64, 29, 9, 2, 250.00, 500.00, 'เสร็จแล้ว'),
 (66, 29, 14, 2, 299.00, 598.00, 'เสร็จแล้ว'),
 (67, 30, 8, 2, 280.00, 560.00, 'เสร็จแล้ว'),
-(68, 30, 9, 2, 250.00, 500.00, 'เสร็จแล้ว');
+(68, 30, 9, 2, 250.00, 500.00, 'เสร็จแล้ว'),
+(70, 31, 14, 2, 299.00, 598.00, 'รอดำเนินการ'),
+(71, 31, 13, 2, 250.00, 500.00, 'รอดำเนินการ');
 
 -- --------------------------------------------------------
 
@@ -180,6 +206,13 @@ ALTER TABLE `admin`
   ADD UNIQUE KEY `username` (`username`);
 
 --
+-- Indexes for table `employees`
+--
+ALTER TABLE `employees`
+  ADD PRIMARY KEY (`emp_id`),
+  ADD UNIQUE KEY `username` (`username`);
+
+--
 -- Indexes for table `orders`
 --
 ALTER TABLE `orders`
@@ -210,22 +243,28 @@ ALTER TABLE `admin`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT for table `employees`
+--
+ALTER TABLE `employees`
+  MODIFY `emp_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- Constraints for dumped tables
