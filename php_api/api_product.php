@@ -1,130 +1,89 @@
 <?php
-
 include 'condb.php';
+header('Content-Type: application/json; charset=utf-8');
 
-$action = $_POST['action'] ?? null;
+$action = $_POST['action'] ?? '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action) {
-    // เพิ่ม / แก้ไข / ลบ
-    switch($action) {
-
-        case 'add':
-            $product_name = $_POST['product_name'];
-            $description = $_POST['description'];
-            $price = $_POST['price'];
-            $stock = $_POST['stock'];
-
-            // อัพโหลดไฟล์รูป
-            $filename = null;
-            if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-                $targetDir = "uploads/";
-                if (!is_dir($targetDir)) {
-                    mkdir($targetDir, 0777, true);
-                }
-                $filename = time() . '_' . basename($_FILES['image']['name']);
-                $targetFile = $targetDir . $filename;
-                move_uploaded_file($_FILES['image']['tmp_name'], $targetFile);
-            }
-
-            $sql = "INSERT INTO products (product_name, description, price, stock, image)
-                    VALUES (:product_name, :description, :price, :stock, :image)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':product_name', $product_name);
-            $stmt->bindParam(':description', $description);
-            $stmt->bindParam(':price', $price);
-            $stmt->bindParam(':stock', $stock);
-            $stmt->bindParam(':image', $filename);
-
-            if ($stmt->execute()) {
-                echo json_encode(["message" => "เพิ่มสินค้าสำเร็จ"]);
-            } else {
-                echo json_encode(["error" => "เพิ่มสินค้าล้มเหลว"]);
-            }
-            break;
-
-        case 'update':
-            $product_id = $_POST['product_id'];
-            $product_name = $_POST['product_name'];
-            $description = $_POST['description'];
-            $price = $_POST['price'];
-            $stock = $_POST['stock'];
-
-            // อัพโหลดไฟล์รูป
-            if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
-                $targetDir = "uploads/";
-                $filename = time() . '_' . basename($_FILES['image']['name']);
-                $targetFile = $targetDir . $filename;
-                move_uploaded_file($_FILES['image']['tmp_name'], $targetFile);
-                $imageSQL = ", image = :image";
-            } else {
-                $imageSQL = "";
-            }
-
-            $sql = "UPDATE products SET 
-                        product_name = :product_name,
-                        description = :description,
-                        price = :price,
-                        stock = :stock
-                        $imageSQL
-                    WHERE product_id = :product_id";
-            $stmt = $conn->prepare($sql);
-
-            $stmt->bindParam(':product_name', $product_name);
-            $stmt->bindParam(':description', $description);
-            $stmt->bindParam(':price', $price);
-            $stmt->bindParam(':stock', $stock);
-            $stmt->bindParam(':product_id', $product_id);
-            if (isset($filename)) $stmt->bindParam(':image', $filename);
-
-            if ($stmt->execute()) {
-                echo json_encode(["message" => "แก้ไขสินค้าสำเร็จ"]);
-            } else {
-                echo json_encode(["error" => "แก้ไขสินค้าล้มเหลว"]);
-            }
-            break;
-
-      case 'delete':
-    $product_id = $_POST['product_id'];
-
-    // 🔍 ดึงชื่อไฟล์รูปจากฐานข้อมูลก่อนลบ
-    $stmt = $conn->prepare("SELECT image FROM products WHERE product_id = :product_id");
-    $stmt->bindParam(':product_id', $product_id);
-    $stmt->execute();
-    $product = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($product && !empty($product['image'])) {
-        $filePath = "uploads/" . $product['image'];
-        // 🧹 ลบไฟล์รูปถ้ามีอยู่จริง
-        if (file_exists($filePath)) {
-            unlink($filePath);
-        }
-    }
-
-    // 🔥 ลบข้อมูลสินค้าออกจากฐานข้อมูล
-    $stmt = $conn->prepare("DELETE FROM products WHERE product_id = :product_id");
-    $stmt->bindParam(':product_id', $product_id);
-
-    if ($stmt->execute()) {
-        echo json_encode(["message" => "ลบสินค้าสำเร็จ และลบรูปภาพออกจากโฟลเดอร์แล้ว"]);
-    } else {
-        echo json_encode(["error" => "ลบสินค้าล้มเหลว"]);
-    }
-    break;
-
-
-        default:
-            echo json_encode(["error" => "Action ไม่ถูกต้อง"]);
-            break;
-    }
-
-} else {
-    // GET: ดึงข้อมูลสินค้า
-    $stmt = $conn->prepare("SELECT * FROM products ORDER BY product_id DESC");
-    if ($stmt->execute()) {
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        // ดึงสินค้าพร้อมชื่อประเภท
+        $stmt = $conn->prepare("
+            SELECT p.*, c.category_name
+            FROM products p
+            LEFT JOIN categorys c ON p.category_id = c.category_id
+            ORDER BY p.product_id DESC
+        ");
+        $stmt->execute();
         $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(["success" => true, "data" => $products]);
-    } else {
-        echo json_encode(["success" => false, "data" => []]);
+
+        // ดึงรายการประเภทด้วย
+        $catStmt = $conn->prepare("SELECT * FROM categorys ORDER BY category_id ASC");
+        $catStmt->execute();
+        $categories = $catStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(["success" => true, "data" => $products, "categories" => $categories]);
+        exit;
     }
+
+    // เพิ่มสินค้า
+    if ($action === 'add') {
+        $name = $_POST['product_name'];
+        $desc = $_POST['description'] ?? '';
+        $price = $_POST['price'];
+        $stock = $_POST['stock'];
+        $category_id = $_POST['category_id'];
+
+        $imageName = null;
+        if (!empty($_FILES['image']['name'])) {
+            $imageName = time() . '_' . basename($_FILES['image']['name']);
+            move_uploaded_file($_FILES['image']['tmp_name'], "uploads/$imageName");
+        }
+
+        $stmt = $conn->prepare("INSERT INTO products (product_name, description, price, stock, image, category_id)
+                                VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $desc, $price, $stock, $imageName, $category_id]);
+        echo json_encode(["message" => "เพิ่มสินค้าเรียบร้อย"]);
+        exit;
+    }
+
+    // แก้ไขสินค้า
+    if ($action === 'update') {
+        $id = $_POST['product_id'];
+        $name = $_POST['product_name'];
+        $desc = $_POST['description'] ?? '';
+        $price = $_POST['price'];
+        $stock = $_POST['stock'];
+        $category_id = $_POST['category_id'];
+
+        $sql = "UPDATE products SET product_name=?, description=?, price=?, stock=?, category_id=?";
+        $params = [$name, $desc, $price, $stock, $category_id];
+
+        if (!empty($_FILES['image']['name'])) {
+            $imageName = time() . '_' . basename($_FILES['image']['name']);
+            move_uploaded_file($_FILES['image']['tmp_name'], "uploads/$imageName");
+            $sql .= ", image=?";
+            $params[] = $imageName;
+        }
+
+        $sql .= " WHERE product_id=?";
+        $params[] = $id;
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        echo json_encode(["message" => "แก้ไขสินค้าสำเร็จ"]);
+        exit;
+    }
+
+    // ลบสินค้า
+    if ($action === 'delete') {
+        $id = $_POST['product_id'];
+        $stmt = $conn->prepare("DELETE FROM products WHERE product_id=?");
+        $stmt->execute([$id]);
+        echo json_encode(["message" => "ลบสินค้าเรียบร้อย"]);
+        exit;
+    }
+
+} catch (Exception $e) {
+    echo json_encode(["error" => $e->getMessage()]);
 }
 ?>
