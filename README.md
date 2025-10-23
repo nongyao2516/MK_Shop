@@ -1,4 +1,5 @@
-# project_41970137_vue
+# MK_Shop
+Created by Nongyao Sornjapo
 
 ## Project setup
 ```
