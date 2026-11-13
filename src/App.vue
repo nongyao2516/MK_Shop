@@ -29,6 +29,9 @@
               <li class="nav-item">
               <router-link class="nav-link" to="/product_edit">Add Product</router-link>
             </li>
+             <li class="nav-item">
+              <router-link class="nav-link" to="/category">Catagory</router-link>
+            </li>
             <li class="nav-item">
   <a class="nav-link" href="/report">Report</a>
 </li>
